@@ -1,0 +1,8 @@
+{
+  "name": "STOP Digital",
+  "description": "Una aplicación web progresiva (PWA) para jugar al clásico STOP (Tutti Frutti) en tiempo real mediante WebRTC PeerJS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

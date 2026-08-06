@@ -1,0 +1,17 @@
+{
+  "name": "stop-digital",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "STOP Digital P2P Multiplayer web app",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node -c server.js",
+    "lint": "node -c server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.15.0",
+    "express": "^4.19.2"
+  }
+}

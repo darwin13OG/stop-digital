@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#7c4dff">
+  <meta name="description" content="STOP Digital Pro - El clásico juego de palabras Tutti Frutti / Basta en tiempo real con conexión P2P.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+
+  <title>STOP Digital PRO</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- PeerJS Library -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <!-- External Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Wrapper Centered Container -->
+  <div id="app-root">
+    <div class="app-container" id="main-app-container">
+
+      <!-- Offline Network Status Banner -->
+      <div id="offline-banner" class="offline-banner">
+        <span>⚠️</span> Sin conexión a Internet - Revisa tu red
+      </div>
+
+      <!-- Top Navigation Header -->
+      <header class="top-nav" id="app-top-nav">
+        <div class="app-brand" id="brand-header">
+          <div class="brand-badge" id="brand-logo-badge">ST</div>
+          <span class="brand-title" id="brand-title-text">STOP Digital</span>
+        </div>
+        <div class="nav-actions" id="nav-action-buttons">
+          <button class="icon-btn" id="audio-toggle-btn" onclick="toggleAudio()" title="Silenciar / Activar Sonido">🔊</button>
+          <button class="icon-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar Tema">☀️</button>
+        </div>
+      </header>
+
+      <!-- Toast Notification Badge -->
+      <div id="toast" role="alert"></div>
+
+      <!-- Views Container -->
+      <main class="views-wrapper" id="views-main-wrapper">
+
+        <!-- SETUP VIEW (Menú Principal) -->
+        <section id="view-setup" class="view active">
+          <div class="card" id="card-welcome-setup">
+            <div class="card-title" id="setup-title-text">
+              <span>🎮</span> ¡A Jugar STOP!
+            </div>
+            
+            <div class="input-group" id="input-group-username">
+              <label class="input-label" for="username">Tu Apodo / Nickname</label>
+              <input type="text" id="username" class="input-field" placeholder="Ej: AlexPro" maxlength="14" autocomplete="off">
+            </div>
+
+            <!-- MODO SOLITARIO VS BOT IA -->
+            <div class="solo-mode-card" style="background: rgba(124, 77, 255, 0.08); border: 1px solid rgba(124, 77, 255, 0.25); border-radius: 16px; padding: 14px; margin-bottom: 18px;">
+              <div style="font-weight: 800; font-size: 14px; color: var(--md-sys-color-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <span>🤖</span> Modo Solitario (Sin Código de Sala)
+              </div>
+              <div class="input-group" style="margin-bottom: 10px;">
+                <label class="input-label" for="solo-bot-level">Dificultad del Rival IA Gemini</label>
+                <select id="solo-bot-level" class="select-field">
+                  <option value="facil">🟢 Principiante (Bot de Calentamiento)</option>
+                  <option value="normal" selected>🟡 Normal (Palabras Rápidas Cotidianas)</option>
+                  <option value="experto">🔴 Experto (Palabras Pro y Ágiles)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" id="btn-solo" onclick="startSoloMode()" style="background: linear-gradient(135deg, #7c4dff, #00e5ff);">
+                <span>🤖</span> Jugar Contra la IA
+              </button>
+            </div>
+
+            <div style="text-align: center; margin: 18px 0; opacity: 0.5; font-size: 12px; font-weight: 800; letter-spacing: 1.5px;">
+              O MULTIJUGADOR EN TIEMPO REAL
+            </div>
+
+            <button class="btn btn-secondary" id="btn-create" onclick="goToLobby(true)" style="margin-bottom: 12px;">
+              <span>🚀</span> Crear Sala Multijugador
+            </button>
+
+            <div class="input-group" id="input-group-room">
+              <label class="input-label" for="room-input">Código de Sala</label>
+              <div class="room-input-container">
+                <span class="room-prefix">STOP-</span>
+                <input type="text" id="room-input" class="input-field room-field" placeholder="A1B2" autocomplete="off" style="text-transform: uppercase;" maxlength="10" oninput="formatRoomInput(this)">
+              </div>
+            </div>
+
+            <button class="btn btn-secondary" id="btn-join" onclick="goToLobby(false)">
+              <span>🔑</span> Unirse a Sala
+            </button>
+          </div>
+        </section>
+
+        <!-- LOBBY VIEW (Sala de Espera) -->
+        <section id="view-lobby" class="view">
+          <div class="card" id="card-lobby-host">
+            <div class="card-title" id="lobby-title-heading">
+              <span>👑</span> Sala de Espera
+            </div>
+
+            <!-- Host Config Options -->
+            <div id="host-options" class="host-options-grid hidden">
+              <div class="input-group" id="group-timer-select">
+                <label class="input-label" for="timer-select">Tiempo Ronda</label>
+                <select id="timer-select" class="select-field" onchange="onHostSettingsChanged()">
+                  <option value="15">15 Segundos</option>
+                  <option value="30">30 Segundos</option>
+                  <option value="45">45 Segundos</option>
+                  <option value="60" selected>60 Segundos (1 Min)</option>
+                  <option value="90">90 Segundos (1.5 Min)</option>
+                  <option value="120">120 Segundos (2 Min)</option>
+                  <option value="180">180 Segundos (3 Min)</option>
+                  <option value="0">⏳ Sin Límite</option>
+                </select>
+              </div>
+
+              <div class="input-group" id="group-rounds-select">
+                <label class="input-label" for="rounds-select">Meta Rondas</label>
+                <select id="rounds-select" class="select-field" onchange="onHostSettingsChanged()">
+                  <option value="5">5 Rondas</option>
+                  <option value="3">3 Rondas</option>
+                  <option value="10">10 Rondas</option>
+                </select>
+              </div>
+
+              <div class="input-group" id="group-category-preset" style="grid-column: span 2;">
+                <label class="input-label" for="category-preset-select">Set de Categorías</label>
+                <select id="category-preset-select" class="select-field" onchange="onCategoryPresetChanged()">
+                  <option value="classic" selected>📚 Clásico Tutti Frutti (7 Categorías)</option>
+                  <option value="pop">🎬 Cultura Pop & Cine</option>
+                  <option value="geo">🌍 Geografía & Naturaleza</option>
+                  <option value="gamer">🕹️ Gamer & Frikis</option>
+                  <option value="custom">⚙️ Personalizado...</option>
+                </select>
+              </div>
+
+              <div id="custom-categories-box" class="input-group hidden" style="grid-column: span 2; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px dashed var(--md-sys-color-outline);">
+                <label class="input-label" for="custom-categories-input">Escribe las categorías (separadas por coma):</label>
+                <input type="text" id="custom-categories-input" class="input-field" placeholder="Ej: Nombre, Animal, Marca, Serie, Comida" onchange="onCustomCategoriesEntered()">
+              </div>
+            </div>
+
+            <!-- Room Code Box (1-Click Copy) -->
+            <div id="room-code-box" class="room-code-box" onclick="copyRoomCode()" title="Toca para copiar código">
+              <div class="room-code-label">CÓDIGO DE INVITACIÓN</div>
+              <div class="room-code-value" id="room-id-display">...</div>
+              <div style="margin-top: 6px;"><span class="copy-badge">📋 Toca para copiar</span></div>
+            </div>
+
+            <!-- Connected Players Count & List -->
+            <div id="players-count" style="font-weight: 700; font-size: 14px; margin-bottom: 10px;">
+              <span class="spinner"></span> Esperando a otros jugadores...
+            </div>
+
+            <div id="player-list-container" class="player-list"></div>
+
+            <button id="start-game-btn" class="btn btn-primary" onclick="hostLaunchRound()" style="margin-top: 16px;">
+              <span>🚀</span> Iniciar Partida
+            </button>
+
+            <button class="btn btn-secondary" onclick="confirmLeaveRoom()" style="margin-top: 10px;">
+              <span>🚪</span> Salir de la Sala
+            </button>
+          </div>
+        </section>
+
+        <!-- GAMEPLAY VIEW (Juego Activo) -->
+        <section id="view-game" class="view">
+          <div class="game-header" id="game-header-bar">
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <div id="game-round-tag" style="font-size: 13px; font-weight: 800; color: var(--md-sys-color-secondary); letter-spacing: 1px; text-transform: uppercase;">Ronda 1</div>
+              <button class="chip-btn" onclick="confirmLeaveRoom()">🚪 Abandonar</button>
+            </div>
+            <div class="letter-display" id="current-letter">?</div>
+          </div>
+
+          <!-- Dynamic Visual Progress Timer -->
+          <div class="timer-container" id="timer-progress-container">
+            <div class="timer-header">
+              <span class="timer-label">Tiempo Restante</span>
+              <span class="timer-value" id="game-timer-val">--</span>
+            </div>
+            <div class="timer-track">
+              <div id="timer-bar-fill" class="timer-bar"></div>
+            </div>
+          </div>
+
+          <!-- Categories Input List -->
+          <div id="cats-inputs-container" style="width: 100%;"></div>
+
+          <!-- STOP Action Button with Haptics -->
+          <button id="btn-stop-action" class="btn-stop" onclick="triggerStop()">
+            STOP
+          </button>
+        </section>
+
+        <!-- RESULTS VIEW (Resultados de Ronda) -->
+        <section id="view-results" class="view">
+          <div class="card" id="card-results-board">
+            <div class="card-title">
+              <span>📊</span> Resultados Ronda <span id="results-round-num" style="color: var(--md-sys-color-primary);">1</span>
+            </div>
+
+            <p id="host-moderation-hint" style="font-size: 12px; font-weight: 600; color: var(--md-sys-color-secondary); margin-bottom: 12px; display: none;">
+              💡 <strong>Host:</strong> Toca cualquier palabra para alternar puntaje: Válida ➔ Mitad (50 pts) ➔ Anulada (0 pts - Tachada).
+            </p>
+
+            <div id="results-content" class="results-table-wrapper"></div>
+
+            <button id="btn-validate-ai" class="btn btn-secondary" onclick="runAIValidation()" style="margin-top: 12px; background: rgba(124, 77, 255, 0.15); border: 1px solid var(--md-sys-color-primary);">
+              <span>✨</span> Validar Palabras con Juez IA Gemini
+            </button>
+
+            <!-- SECCIÓN DICCIONARIO Y EXPLICACIONES IA CON FILTROS Y SCROLL -->
+            <div id="ai-dictionary-section" class="ai-dictionary-box hidden" style="margin-top: 20px; padding: 16px; background: rgba(124, 77, 255, 0.08); border: 1px solid rgba(124, 77, 255, 0.25); border-radius: 16px; text-align: left;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="font-weight: 800; font-size: 15px; color: var(--md-sys-color-primary); display: flex; align-items: center; gap: 8px;">
+                  <span>📖</span> Diccionario y Dictamen IA <span id="dict-count-badge" style="background: var(--md-sys-color-primary); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">0</span>
+                </div>
+                <!-- Filtros para evitar saturación visual -->
+                <div class="dict-filter-bar" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <button class="chip-btn active" id="dict-filter-all" onclick="filterDictionary('all')">Todas</button>
+                  <button class="chip-btn" id="dict-filter-valid" onclick="filterDictionary('valid')">🟢 Válidas</button>
+                  <button class="chip-btn" id="dict-filter-half" onclick="filterDictionary('half')">🟡 Mitad</button>
+                  <button class="chip-btn" id="dict-filter-invalid" onclick="filterDictionary('invalid')">🔴 Inválidas</button>
+                </div>
+              </div>
+
+              <!-- Contenedor con Scroll para no saturar la pantalla -->
+              <div id="ai-dictionary-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
+
+            <button id="next-round-btn" class="btn btn-primary hidden" style="margin-top: 10px;">
+              Siguiente Ronda →
+            </button>
+
+            <button class="btn btn-secondary" onclick="confirmLeaveRoom()" style="margin-top: 10px;">
+              <span>🚪</span> Salir al Menú Principal
+            </button>
+          </div>
+        </section>
+
+        <!-- PODIUM VIEW (Ganador Final) -->
+        <section id="view-podium" class="view">
+          <div class="card" id="card-podium-winner" style="text-align: center; background: linear-gradient(145deg, rgba(140, 98, 255, 0.3), rgba(0, 229, 255, 0.15)); border: 1px solid var(--md-sys-color-primary);">
+            <div style="font-size: 60px; margin-bottom: 10px;">🏆</div>
+            <h2 style="font-size: 26px; font-weight: 900; margin-bottom: 6px;">¡TENEMOS GANADOR!</h2>
+            <div id="winner-name" style="font-size: 32px; font-weight: 900; color: var(--md-sys-color-secondary); margin: 16px 0;">-</div>
+            <div id="winner-score" style="font-size: 18px; font-weight: 700; opacity: 0.9;">0 Puntos Totales</div>
+
+            <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 28px;">
+              🔄 Nueva Partida
+            </button>
+          </div>
+        </section>
+
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div class="modal-card">
+      <div style="font-size: 36px; margin-bottom: 8px;">🛑</div>
+      <h2 id="modal-title" style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">¡STOP!</h2>
+      <p id="modal-body" style="font-size: 14px; color: var(--md-sys-color-on-surface-variant); font-weight: 500;">Enviando respuestas...</p>
+    </div>
+  </div>
+
+  <!-- Custom Confirmation Modal Overlay -->
+  <div id="confirm-modal-overlay" class="modal-overlay">
+    <div class="modal-card">
+      <div style="font-size: 36px; margin-bottom: 8px;">🚪</div>
+      <h2 id="confirm-modal-title" style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">¿Salir de la sala?</h2>
+      <p id="confirm-modal-body" style="font-size: 14px; color: var(--md-sys-color-on-surface-variant); margin-bottom: 20px;">Perderás la conexión con la partida actual.</p>
+      <div style="display: flex; gap: 10px; width: 100%;">
+        <button class="btn btn-secondary" onclick="closeConfirmModal()" style="flex: 1;">Cancelar</button>
+        <button class="btn btn-primary" id="confirm-modal-action-btn" style="flex: 1; background: var(--md-sys-color-error); color: white;">Salir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countdown Overlay Animation -->
+  <div id="countdown-overlay" class="countdown-overlay hidden">
+    <div class="countdown-box">
+      <div id="countdown-letter-badge" class="countdown-letter-badge">LETRA: -</div>
+      <div id="countdown-number" class="countdown-number">3</div>
+      <div id="countdown-subtitle" class="countdown-subtitle">¡PREPÁRATE!</div>
+    </div>
+  </div>
+
+  <!-- Floating Reactions Stage (Non-intrusive container overlay) -->
+  <div id="reactions-floating-stage" class="reactions-floating-stage"></div>
+
+  <!-- Non-intrusive Floating Reaction Bar -->
+  <div id="floating-reaction-bar" class="floating-reaction-bar hidden">
+    <button class="reaction-btn" onclick="sendReaction('😂')" title="Reír">😂</button>
+    <button class="reaction-btn" onclick="sendReaction('🔥')" title="Fuego">🔥</button>
+    <button class="reaction-btn" onclick="sendReaction('👏')" title="Aplausos">👏</button>
+    <button class="reaction-btn" onclick="sendReaction('😱')" title="Sorpresa">😱</button>
+    <button class="reaction-btn" onclick="sendReaction('🧠')" title="Cerebro">🧠</button>
+    <button class="reaction-btn" onclick="sendReaction('⏱️')" title="Reloj">⏱️</button>
+  </div>
+
+  <!-- Splash Screen -->
+  <div id="splash-screen">
+    <div class="splash-logo-container">
+      <div class="splash-glow-ring"></div>
+      <div class="splash-logo-badge">
+        <span class="splash-logo-text">STOP</span>
+        <span class="splash-sub-tag">PRO</span>
+      </div>
+    </div>
+    <div class="splash-title">STOP DIGITAL</div>
+    <div class="splash-status" id="splash-status">
+      <span class="spinner"></span> Iniciando sistema...
+    </div>
+  </div>
+
+  <!-- External JavaScript -->
+  <script src="game.js"></script>
+</body>
+</html>
