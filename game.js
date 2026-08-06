@@ -1220,6 +1220,14 @@ function calculateRoundPoints() {
         pts = 0;
       } else if (override === 'half') {
         pts = 50;
+      } else if (override === 'full') {
+        pts = 100;
+      } else if (override === 'valid') {
+        if (ans && ans.length > 0) {
+          pts = wordCounts[ans] > 1 ? 50 : 100;
+        } else {
+          pts = 0;
+        }
       } else {
         if (ans && ans.startsWith(currentLetter.toUpperCase())) {
           pts = wordCounts[ans] > 1 ? 50 : 100;
@@ -1284,14 +1292,18 @@ function renderResultsUI() {
       let badgeText = `+${pts}`;
       let badgeClass = "pts-badge";
 
-      if (override === 'invalid' || (override !== 'half' && pts === 0)) {
+      if (pts === 0 || override === 'invalid') {
         cellClass += " invalid-ans";
         badgeText = "0";
         badgeClass += " zero";
-      } else if (override === 'half' || (override === undefined && pts === 50)) {
+      } else if (pts === 50 || override === 'half') {
         cellClass += " half-ans";
         badgeText = "+50";
         badgeClass += " half";
+      } else {
+        cellClass += " valid-ans";
+        badgeText = `+${pts}`;
+        badgeClass += " valid";
       }
 
       const onClickAttr = isHost ? `onclick="toggleOverrideWord('${id}', '${cat}')"` : "";
@@ -1317,7 +1329,7 @@ function toggleOverrideWord(playerId, category) {
   players[playerId].overrideMap = players[playerId].overrideMap || {};
   const current = players[playerId].overrideMap[category];
 
-  if (!current || current === 'full') {
+  if (!current || current === 'full' || current === 'valid') {
     players[playerId].overrideMap[category] = 'half';
     showToast('🟡 Palabra ajustada a 50 pts (Mitad de puntaje)', false);
   } else if (current === 'half') {
@@ -1325,7 +1337,7 @@ function toggleOverrideWord(playerId, category) {
     showToast('🔴 Palabra Anulada (0 pts - Tachada)', false);
   } else {
     players[playerId].overrideMap[category] = 'full';
-    showToast('🟢 Palabra Restablecida a Válida', false);
+    showToast('🟢 Palabra Restablecida a Válida (100 pts)', false);
   }
 
   calculateRoundPoints();

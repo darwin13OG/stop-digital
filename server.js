@@ -64,6 +64,9 @@ Letra obligatoria: "${letter.toUpperCase()}"
 Lista de palabras a evaluar por categoría:
 ${JSON.stringify(answers, null, 2)}
 
+Regla Especial de Categorías:
+- Para categorías como "Fruta", "Frutas", "Tutti Frutti", "Verdura" o "Fruta/Verdura", ACEPTA TANTO FRUTAS COMO VERDURAS U HORTALIZAS VÁLIDAS (por ejemplo: Tomate, Zanahoria, Lechuga, Aguacate, Pepino, Brócoli, Papa, Cebolla, Espinaca, Ajo son 100% VÁLIDAS como status "valid"). No seas estricto con la diferenciación botánica.
+
 Instrucciones para CADA elemento de la lista:
 1. Determina el "status":
    - "valid": Es una palabra/concepto real que empieza por "${letter.toUpperCase()}" y pertenece a la categoría.
